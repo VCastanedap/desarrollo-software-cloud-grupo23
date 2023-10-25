@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
 from flask import jsonify
 from flask import send_file
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key  = 'your_secret_key'
@@ -31,10 +32,11 @@ class FileConversionTask(db.Model):
     user = db.relationship('User', backref=db.backref('file_conversion_tasks', lazy=True))
     original_filename = db.Column(db.String(255), nullable=False)
     converted_filename = db.Column(db.String(255))
+    original_filepath = db.Column(db.String(255), nullable=False)
+    converted_filepath = db.Column(db.String(255))
     conversion_format = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(20), default='uploaded')
-
-
+    status = db.Column(db.String(20), default='unavailable')
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 users = {
     'user1': 'password1',
@@ -115,7 +117,7 @@ def tasks():
     if 'username' in session:
         username = session['username']
         user_task_list = user_tasks.get(username, [])
-        converted_file_url = None  # Asigna un valor predeterminado
+        converted_file_url = None
 
         if request.method == 'POST':
             new_task = request.form.get('new_task')
@@ -141,36 +143,39 @@ def tasks():
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(upload_folder, filename)
                     file.save(file_path)
-                    os.chmod(file_path, 0o644)  # Cambiar permisos del archivo original
+                    os.chmod(file_path, 0o644)
 
                     input_path = file_path
-                    # Cambio: nombra el archivo convertido usando el mismo nombre base pero con la nueva extensión
                     output_filename = f"converted_{filename.rsplit('.', 1)[0]}.{conversion_format}"
                     output_path = os.path.join(upload_folder, output_filename)
 
                     video = VideoFileClip(input_path)
                     video.write_videofile(output_path, codec='libx264')
-                    os.chmod(output_path, 0o644)  # Cambiar permisos del archivo convertido
+                    os.chmod(output_path, 0o644)
 
-                    # Agregar el ID de la tarea a la lista de tareas del usuario
                     user_task_list.append(f'Task: Convert {filename} to {conversion_format}')
                     user_tasks[username] = user_task_list
 
-                    """taskFile = FileConversionTask(
+                    taskFile = FileConversionTask(
                         user_id=session['id_user'],
                         original_filename=filename,
-                        converted_filename=f'Task: Convert {filename} to {conversion_format}',
+                        original_filepath=input_path,
+                        converted_filename=output_filename,
+                        converted_filepath=output_path,
                         conversion_format=conversion_format,
-                        status="Conv exitosa")
+                        status="available"
+                    )
                     db.session.add(taskFile)
-                    db.session.commit()"""
+                    db.session.commit()
 
-                    # Cambio: crea la URL para el archivo convertido usando la función url_for
                     converted_file_url = url_for('download_file', filename=output_filename)
                     flash('Conversión exitosa', 'success')
 
-        #return render_template('tasks.html', id_user=session["id_user"], username=username, tasks=user_task_list, converted_file_url=converted_file_url)
-        return render_template('tasks.html', username=username, tasks=user_task_list, converted_file_url=converted_file_url)
+        # Obteniendo las tareas de conversión desde la base de datos
+        file_conversion_tasks = FileConversionTask.query.filter_by(user_id=session['id_user']).all()
+
+        return render_template('tasks.html', username=username, tasks=user_task_list, converted_file_url=converted_file_url, file_conversion_tasks=file_conversion_tasks)
+
     return 'You are not logged in. <a href="/api/auth/login">Login</a> or <a href="/api/auth/register">Register</a>'
 
 @app.route('/download/<filename>')

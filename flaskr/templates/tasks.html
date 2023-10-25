@@ -52,6 +52,33 @@
 <a href="{{ converted_file_url }}" download>Download Converted File</a>
 {% endif %}
 
+<h2>Your Conversion Tasks:</h2>
+<table border="1">
+    <thead>
+    <tr>
+        <th>User</th>
+        <th>Original Filename</th>
+        <th>Converted Filename</th>
+        <th>Conversion Format</th>
+        <th>Status</th>
+        <th>Timestamp</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for task in file_conversion_tasks %}
+    <tr>
+        <td>{{ session['username'] }}</td>
+        <td><a href="{{ url_for('download_file', filename=task.original_filepath.split('/')[-1]) }}">{{ task.original_filename }}</a></td>
+        <td><a href="{{ url_for('download_file', filename=task.converted_filepath.split('/')[-1]) }}">{{ task.converted_filename }}</a></td>
+        <td>{{ task.conversion_format }}</td>
+        <td>{{ task.status }}</td>
+        <td>{{ task.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+
 <a href="/logout">Logout</a>
 
 <script>

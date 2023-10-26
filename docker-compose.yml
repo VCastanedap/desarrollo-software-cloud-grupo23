@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:13
+    ports:
+    - "5432:5432"
+    environment:
+      POSTGRES_DB: flask_celery
+      POSTGRES_USER: flask_celery
+      POSTGRES_PASSWORD: flask_celery
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/api
+
+  worker:
+    build:
+      context: ./broker
+      dockerfile: Dockerfile
+    command: celery -A tasks worker -l info -E
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes: ['./broker:/broker']
+
+volumes:
+  pgdata:

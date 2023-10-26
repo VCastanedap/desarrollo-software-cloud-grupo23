@@ -14,6 +14,14 @@ app.secret_key = "your_secret_key"
 
 jwt = JWTManager(app)
 
+@app.route('upload/<filename>')
+def upload_file():
+    from broker.tasks import tasks
+
+
+
+    tasks('nombre_archivo')
+    return response()
 
 @app.route("/download/<filename>")
 def download_file(filename):
@@ -38,6 +46,9 @@ def download_file(filename):
             f'Contenido del directorio "uploads" después de no encontrar el archivo: {os.listdir(upload_folder)}'
         )
         return "Archivo no encontrado", 404
+
+
+
 
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER

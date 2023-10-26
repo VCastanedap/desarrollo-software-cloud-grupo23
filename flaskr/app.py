@@ -112,6 +112,7 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
 
+@jwt_required()
 @app.route('/tasks', methods=['GET', 'POST'])
 def tasks():
     if 'username' in session:
@@ -199,30 +200,42 @@ def download_file(filename):
         return 'Archivo no encontrado', 404
 
 @jwt_required()
-@app.route('/tasks/<int:id_task>', methods=['GET','POST'])
-def get_task_by_id(id_task):
-    id_task=id_task-1
+@app.route('/tasks/<int:id_task>', methods=['GET','DELETE'])
+def task_by_id(id_task):
     print("** llegue -> ", request.method )
     if 'username' in session:
-        username = session['username']
-        user_task_list = user_tasks.get(username, [])
+        
+        if request.method == 'GET':
+            task = FileConversionTask.query.filter_by(user_id=session['id_user'], id=id_task).first()
 
-        if id_task < 0 or id_task >= len(user_task_list):
-            return 'Tarea no encontrada', 404  # Retorna un código 404 si el ID no existe
-        else:
-            task = user_task_list[id_task]
-            return f'Tarea ID {id_task}: {task} <br/> volver a <a href="/tasks">tasks</a> '
+            if task is None:
+                return 'Tarea no encontrada', 404  # Retorna un código 404 si la tarea no existe
+
+            return render_template('id_tasks.html', username=session['id_user'], task=task)
+
+        
+        if request.method == 'DELETE':
+            
+            task = FileConversionTask.query.filter_by(user_id=session['id_user'], id=id_task).first()
+
+            if task is None:
+                return 'Tarea no encontrada', 404  # Retorna un código 404 si la tarea no existe
+            
+            # Elimina el archivo original y convertido del servidor
+            if os.path.exists(task.original_filepath):
+                os.remove(task.original_filepath)
+            if os.path.exists(task.converted_filepath):
+                os.remove(task.converted_filepath)
+                
+                
+            db.session.delete(task)
+            db.session.commit()
+            return f'Tarea ID {id} eliminada: {task}'        
 
     return 'You are not logged in. <a href="/api/auth/login">Login</a> or <a href="/api/auth/register">Register</a>'
 
 
-@jwt_required()
-@app.route('/tasks/<int:id_task>', methods=['GET','DELETE'])
-def delete_task_by_id(id_task):
-    id_task=id_task-1
-    print("** llegue -> ", request.method )
 
-    return f'eliminado {id_task}'
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_FORMATS = {'mp4', 'webm', 'avi', 'mpeg', 'wmv'}

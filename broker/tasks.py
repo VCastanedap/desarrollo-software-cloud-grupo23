@@ -1,5 +1,12 @@
 import os
 
+from flask import Flask, request, render_template, url_for, session, flash
+from flask_jwt_extended import jwt_required
+
+from werkzeug.utils import secure_filename
+from moviepy.editor import VideoFileClip
+from flask import jsonify
+
 from celery import Celery
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
@@ -7,6 +14,7 @@ CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
 
 celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
+app = Flask(__name__)
 
 @jwt_required()
 @app.route('/tasks/<int:id_task>', methods=['GET','DELETE'])
@@ -109,3 +117,18 @@ def tasks():
         return render_template('tasks.html', username=username, tasks=user_task_list, converted_file_url=converted_file_url, file_conversion_tasks=file_conversion_tasks)
 
     return 'You are not logged in. <a href="/api/auth/login">Login</a> or <a href="/api/auth/register">Register</a>'
+
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_FORMATS = {'mp4', 'webm', 'avi', 'mpeg', 'wmv'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_format(extension):
+    return extension.lower() in ALLOWED_FORMATS
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3001)

@@ -1,7 +1,6 @@
 from flask import Flask, request, session
 from flask_jwt_extended import JWTManager, create_access_token
 
-from flask import jsonify
 
 from .models import User
 from .models import db
@@ -14,6 +13,12 @@ app.config['JWT_SECRET_KEY'] = 'frase-secreta'
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 jwt = JWTManager(app)
+
+app_context = app.app_context()
+app_context.push()
+
+db.init_app(app)
+db.create_all()
 
 
 def __validate_user(email:str) -> bool:

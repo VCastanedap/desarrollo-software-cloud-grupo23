@@ -1,29 +1,37 @@
 import os
 import stat
 
-from flask import Flask, request, render_template, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt
 
-from werkzeug.utils import secure_filename
-from moviepy.editor import VideoFileClip
-from flask import jsonify
 from flask import send_file
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = 'frase-secreta'
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 jwt = JWTManager(app)
 
+db = SQLAlchemy()
+
+app_context = app.app_context()
+app_context.push()
+
+db.init_app(app)
 
 upload_folder = app.config["UPLOAD_FOLDER"]
 
 
-@app.route('upload/<filename>')
+@app.route('/api/upload/<filename>', methods=['POST'])
 def upload_file():
+    # try create new task with the file 
     pass
 
-
-@app.route("/download/<filename>")
+@app.route("/api/download/<filename>")
 def download_file(filename):
     try:
         file_path = os.path.join(upload_folder, filename)

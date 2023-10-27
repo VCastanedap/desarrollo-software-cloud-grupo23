@@ -9,7 +9,6 @@ services:
       POSTGRES_DB: flask_celery
       POSTGRES_USER: flask_celery
       POSTGRES_PASSWORD: flask_celery
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data
     
@@ -18,25 +17,35 @@ services:
     ports:
       - "6379:6379"
 
-  api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    ports:
-      - "5001:5001"
-    volumes:
-      - .:/api
+  # api:
+  #   build:
+  #     context: ./api
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5001:5001"
+  #   volumes:
+  #     - .:/api
 
-  broker:
+  # broker:
+  #   build:
+  #     context: ./broker
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     CELERY_BROKER_URL: redis://redis:6379/0
+  #     CELERY_RESULT_BACKEND: redis://redis:6379/0
+  #   depends_on:
+  #     - redis
+  #   volumes: ['./broker:/broker']
+
+  users:
     build:
-      context: ./broker
+      context: ./users
       dockerfile: Dockerfile
-    environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
-      - redis
-    volumes: ['./broker:/broker']
+      - postgres
+    volumes:
+      - .:/users
 
 volumes:
   pgdata:
+  users:

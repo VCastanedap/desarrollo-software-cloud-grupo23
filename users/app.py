@@ -8,60 +8,71 @@ from .models import db
 
 app = Flask(__name__)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = 'frase-secreta'
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
-@app.route("/create_user")
-def create_user():
-    user = User(username="example_user", password="example_password")
-    db.session.add(user)
-    db.session.commit()
-    return "User created!"
-
-
-@app.route("/api/auth/signup", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        if username in users:
-            return "Username already exists. Please choose a different username."
-        users[username] = password
-        user = User(username=username, password=password)
-        db.session.add(user)
-        db.session.commit()
-        return 'Registration successful. <a href="/api/auth/login">Login</a>'
-    return render_template("register.html")
+jwt = JWTManager(app)
 
 
-@app.route("/api/auth/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        if username in users and users[username] == password:
-            chef = User.query.filter(
-                User.username == username,
-                User.password == password,
-            ).first()
+def __validate_user(email:str) -> bool:
+    if User.query.filter(email==email).first():
+        return True
+    else:
+        return False
 
-            session["id_user"] = chef.id
 
-            session["username"] = username
-            token_de_acceso = create_access_token(
-                identity=username,
-                expires_delta=False,
-                additional_claims={"username": username},
+@app.route("/api/users/signup", methods=['POST'])
+def signup():
+    user_name = request.json['username']
+    email = request.json['email']
+    password = request.json['password']
+    
+    if not __validate_user(email=email): 
+        try:
+            new_user = User(
+                username = user_name,
+                email=email, 
+                password = password
             )
-            session["token"] = token_de_acceso
+        except Exception:
+            return {
+                "message": "Bad request"
+            }
+        else:
+            access_token = create_access_token(identity=user_name)
+            db.session.add(new_user)
+            db.session.commit()
+            return {
+                "message": "User created!", 
+                "access_token": access_token
+            }
 
-            return redirect(url_for("home"))
-        return "Invalid username or password"
-    return render_template("login.html")
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    username = request.json["username"]
+    email = request.json['email']
+    
+    if __validate_user(email=email):
+        access_token = create_access_token(identity=username)
+        return {
+                "message": "Success login", 
+                "access_token": access_token
+            }
+    else:
+        return {
+            "message": "Invalid username or password"
+        }
 
 
 @app.route("/logout")
 def logout():
     session.pop("username", None)
-    return redirect(url_for("home"))
+    return {
+        "message": "Finished session"
+    }
 
 
 if __name__ == "__main__":

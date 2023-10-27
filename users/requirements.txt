@@ -4,12 +4,13 @@ celery
 colorama
 Flask
 Flask-SQLAlchemy
-Flask-JWT
 Flask-JWT-Extended
 importlib-metadata
 itsdangerous
 Jinja2
 MarkupSafe
+marshmallow
+marshmallow-sqlalchemy
 moviepy
 psycopg2-binary
 PyJWT

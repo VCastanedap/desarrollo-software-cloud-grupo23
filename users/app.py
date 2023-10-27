@@ -1,9 +1,10 @@
 from flask import Flask, request, session
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager
+from flask_jwt_extended import create_access_token
+from flask_sqlalchemy import SQLAlchemy
+from marshmallow import fields
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
-
-from .models import User
-from .models import db
 
 app = Flask(__name__)
 
@@ -14,11 +15,31 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 
 jwt = JWTManager(app)
 
+db = SQLAlchemy()
+
 app_context = app.app_context()
 app_context.push()
 
 db.init_app(app)
-db.create_all()
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), unique=True)
+    password = db.Column(db.String(120), nullable=False)
+
+
+class UsuarioSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = User
+        include_relationships = True
+        load_instance = True
+        
+    id = fields.String()
+
+
+# db.create_all()
 
 
 def __validate_user(email:str) -> bool:

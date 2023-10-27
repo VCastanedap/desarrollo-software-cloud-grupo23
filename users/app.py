@@ -1,5 +1,5 @@
-from flask import Flask, request, render_template, redirect, url_for, session
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask import Flask, request, session
+from flask_jwt_extended import JWTManager, create_access_token
 
 from flask import jsonify
 

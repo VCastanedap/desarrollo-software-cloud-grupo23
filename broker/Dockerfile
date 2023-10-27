@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Run the Celery worker when the container launches
 # CMD ["celery", "-A", "tasks", "worker", "--loglevel=info"]
-CMD watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A tasks worker --concurrency=1 --loglevel=INFO -E
+CMD watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A app worker --concurrency=1 --loglevel=INFO -E

@@ -93,7 +93,7 @@ def login():
         }
 
 
-@app.route("/logout")
+@app.route("/api/auth//logout")
 def logout():
     session.pop("username", None)
     return {

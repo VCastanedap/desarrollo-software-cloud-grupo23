@@ -117,7 +117,6 @@ def login():
     password = request.json["password"]
 
     try:
-       
         sql_query = "SELECT * FROM usuario WHERE email = %s"
         values = (email,)
 

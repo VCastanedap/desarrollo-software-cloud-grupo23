@@ -1,11 +1,13 @@
-import os
-import stat
+import io
+
+import requests
+
 from flask import Flask, request,jsonify
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt
 from flask_sqlalchemy import SQLAlchemy
 from flask import send_file
-import requests
-app = Flask(__name)
+
+app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -18,8 +20,6 @@ db = SQLAlchemy()
 db.init_app(app)
 
 
-
-# Ruta para registrarse en el servicio de usuarios
 @app.route("/api/users/signup", methods=['POST'])
 def signup():
     data = request.json
@@ -28,7 +28,6 @@ def signup():
     response = requests.post(destination_url, json=data, headers=headers)
     return response.json(), response.status_code
 
-# Ruta para iniciar sesión en el servicio de autenticación
 @app.route("/api/auth/login", methods=['POST'])
 def login():
     data = request.json
@@ -43,14 +42,11 @@ def logout():
     response = requests.post(auth_service_url, headers=request.headers, json=request.json)
 
     if response.status_code == 200:
-        return redirect("/login")
+        return 0 #redirect("/login")
 
     return jsonify({"error": "Error al cerrar sesión en el servicio de autenticación"}), 500
 
 
-
-
-# Ruta para listar tareas desde el servicio de tareas
 @app.route("/api/tasks/list", methods=["GET"])
 def list_tasks():
     destination_url = "http://localhost:8003/api/tasks/list"  # URL del servicio de tareas en localhost
@@ -58,7 +54,7 @@ def list_tasks():
     response = requests.get(destination_url, headers=headers)
     return response.json(), response.status_code
 
-# Ruta para recuperar una tarea específica desde el servicio de tareas
+
 @app.route("/api/tasks/retrieve/<task_id>", methods=["GET"])
 def retrieve_task(task_id):
     destination_url = f"http://localhost:8003/api/tasks/retrieve/{task_id}"  # URL del servicio de tareas en localhost
@@ -82,15 +78,6 @@ def download_file(filename):
         )
 
     return jsonify({"error": "Error al descargar el archivo desde el servicio de descarga"}), 500
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":

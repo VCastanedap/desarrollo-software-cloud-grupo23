@@ -1,8 +1,7 @@
-# serviceB/Dockerfile
-
 # Use an official Python runtime as the base image
 FROM python:3.9-slim
 
+RUN apt-get update
 # Set the working directory in the container to /app
 WORKDIR /app
 
@@ -16,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8001
 
 # Run app.py when the container launches
-CMD ["python", "app.py"]
+CMD [ "flask", "run", "--host=0.0.0.0", "--port=8001"]

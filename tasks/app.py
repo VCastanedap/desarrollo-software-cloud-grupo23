@@ -1,3 +1,5 @@
+from os import environ
+
 from flask import Flask, request, session
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
@@ -6,26 +8,22 @@ from flask import jsonify
 from marshmallow import fields
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
-import psycopg2
+# import psycopg2
 
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URL')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 jwt = JWTManager(app)
 
-db = SQLAlchemy()
+db = SQLAlchemy(app)
 
-app_context = app.app_context()
-app_context.push()
-
-db.init_app(app)
-
-
+"""
 connection = psycopg2.connect(
     host="postgres",
     port=5432,
@@ -33,7 +31,9 @@ connection = psycopg2.connect(
     password="flask_celery",
     database="flask_celery"
 )
+"""
 
+"""
 
 def __extract_tasks(tasks):
     return [
@@ -105,8 +105,4 @@ def download_file(filename):
 def upload_file():
     # try create new task with the file 
     pass
-
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9001)
+"""

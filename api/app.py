@@ -1,23 +1,35 @@
+from os import environ
 import io
 
 import requests
-
 from flask import Flask, request,jsonify
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt
 from flask_sqlalchemy import SQLAlchemy
 from flask import send_file
 
+
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
+app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
-jwt = JWTManager(app)
+db = SQLAlchemy(app)
 
-db = SQLAlchemy()
-db.init_app(app)
+@app.route("/")
+def hello():
+    print('')
+    print('')
+    print('')
+    print(request)
+    print('')
+    print('')
+    print('')
+    print(request.dir)
+
+    return requests.get('localhost:8001/')
 
 
 @app.route("/api/users/signup", methods=['POST'])
@@ -80,5 +92,5 @@ def download_file(filename):
     return jsonify({"error": "Error al descargar el archivo desde el servicio de descarga"}), 500
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+
+jwt = JWTManager(app)

@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
 
 from celery import Celery
+import psycopg2
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
@@ -36,17 +37,30 @@ app_context.push()
 
 db.init_app(app)
 
-class FileConversionTask(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    user = db.relationship('User', backref=db.backref('file_conversion_tasks', lazy=True))
-    original_filename = db.Column(db.String(255), nullable=False)
-    converted_filename = db.Column(db.String(255))
-    original_filepath = db.Column(db.String(255), nullable=False)
-    converted_filepath = db.Column(db.String(255))
-    conversion_format = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(20), default='unavailable')
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+conn = psycopg2.connect(
+    host="postgres",
+    port=5432,
+    user="flask_celery",
+    password="flask_celery",
+    database="flask_celery"
+)
+
+
+    
+cursor = conn.cursor()
+
+
+# class FileConversionTask(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+#     user = db.relationship('User', backref=db.backref('file_conversion_tasks', lazy=True))
+#     original_filename = db.Column(db.String(255), nullable=False)
+#     converted_filename = db.Column(db.String(255))
+#     original_filepath = db.Column(db.String(255), nullable=False)
+#     converted_filepath = db.Column(db.String(255))
+#     conversion_format = db.Column(db.String(20), nullable=False)
+#     status = db.Column(db.String(20), default='unavailable')
+#     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 """
 def task_by_id(id_task):
@@ -82,7 +96,8 @@ def task_by_id(id_task):
 
     return 'You are not logged in. <a href="/api/auth/login">Login</a> or <a href="/api/auth/register">Register</a>'
 """
-    
+
+
 @celery.task
 def tasks(data):
     user_task_list = []
@@ -116,24 +131,30 @@ def tasks(data):
 
         user_task_list.append(f'Task: Convert {filename} to {conversion_format}')
         user_tasks[username] = user_task_list
+        status="available"
+        
+        sql_query = """
+            INSERT INTO file_conversion_task (user_id, original_filename, original_filepath, converted_filename, converted_filepath, conversion_format, status)
+            VALUES (%s, %s, %s, %s, %s, %s, 'available')
+            RETURNING id
+            """
+        values = (user_id, filename, input_path, output_filename, output_path, conversion_format, status)
 
-        taskFile = FileConversionTask(
-            user_id=user_id,
-            original_filename=filename,
-            original_filepath=input_path,
-            converted_filename=output_filename,
-            converted_filepath=output_path,
-            conversion_format=conversion_format,
-            status="available"
-        )
-        db.session.add(taskFile)
-        db.session.commit()
+        cursor.execute(sql_query, values)
+        conn.commit()
+
+        # Obtén el ID de la fila insertada
+        task_id = cursor.fetchone()[0]
 
         converted_file_url = url_for('download_file', filename=output_filename)
         flash('Conversión exitosa', 'success')
 
         # Obteniendo las tareas de conversión desde la base de datos
-        file_conversion_tasks = FileConversionTask.query.filter_by(user_id=user_id).all()
+        sql_query = "SELECT * FROM file_conversion_task WHERE user_id = %s"
+        values = (user_id,)
+
+        cursor.execute(sql_query, values)
+        file_conversion_tasks = cursor.fetchall()
 
         # return 'tasks.html', username=username, tasks=user_task_list, converted_file_url=converted_file_url, file_conversion_tasks=file_conversion_tasks)
         return jsonify(

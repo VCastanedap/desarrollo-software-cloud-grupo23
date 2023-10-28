@@ -76,5 +76,37 @@ def retrive_task(task_id):
         return jsonify({"task": __extract_task(task=cr.fetchone())})
     
 
+
+
+@app.route("/api/download/<filename>")
+def download_file(filename):
+    try:
+        file_path = os.path.join(upload_folder, filename)
+        
+        file_stat = os.stat(file_path)
+        permissions = stat.filemode(file_stat.st_mode)
+        app.logger.info(f"Permissions for {file_path}: {permissions}")
+
+        app.logger.info(
+            f'Uploads before download: {os.listdir(upload_folder)}'
+        )
+
+        absolute_path = os.path.abspath(file_path)
+        return send_file(absolute_path, as_attachment=True)
+    except FileNotFoundError:
+        app.logger.info(
+            f'Contenido del directorio "uploads" después de no encontrar el archivo: {os.listdir(upload_folder)}'
+        )
+        return "Archivo no encontrado", 404
+    
+    
+
+@app.route('/api/upload/<filename>', methods=['POST'])
+def upload_file():
+    # try create new task with the file 
+    pass
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=9001)

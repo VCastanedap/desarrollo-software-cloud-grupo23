@@ -27,9 +27,12 @@ def hello():
     print('')
     print('')
     print('')
-    print(request.dir)
+    print(dir(request))
 
-    return requests.get('localhost:8001/')
+    #print(requests.get('localhost:8001/'))
+
+    # return requests.get('localhost:8001/')
+    return 'Hello'
 
 
 @app.route("/api/users/signup", methods=['POST'])

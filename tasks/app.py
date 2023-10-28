@@ -74,3 +74,7 @@ def retrive_task(task_id):
     with connection.cursor() as cr:
         cr.execute(f"SELECT * FROM tasks where id = {task_id}")
         return jsonify({"task": __extract_task(task=cr.fetchone())})
+    
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=9001)

@@ -49,6 +49,11 @@ def __validate_user(email:str) -> bool:
         return False
 
 
+@app.route("/")
+def hello():
+    return "Users"
+
+
 @app.route("/api/users/signup", methods=['POST'])
 def signup():
     user_name = request.json['username']

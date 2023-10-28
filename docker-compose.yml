@@ -6,9 +6,9 @@ services:
     ports:
     - "5432:5432"
     environment:
-      POSTGRES_DB: flask_celery
-      POSTGRES_USER: flask_celery
-      POSTGRES_PASSWORD: flask_celery
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
     
@@ -46,6 +46,14 @@ services:
     volumes:
       - .:/users
 
+  tasks:
+    build:
+      context: ./tasks
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    volumes:
+      - .:/tasks
+
 volumes:
   pgdata:
-  users:

@@ -38,29 +38,27 @@ connection = psycopg2.connect(
 def __extract_tasks(tasks):
     return [
         {
-            'id': record[0], 
-            'source_uuid': record[1], 
-            'source_name': record[2],
-            'source_format': record[3],
-            'target_format': record[4],
-            'create_datetime': record[5],
-            'start_convert': record[6],
-            'end_convert': record[7],
-            'status': record[8]
+            'id': record[0],
+            'original_filename': record[3],
+            'converted_filename': record[4],
+            'original_filepath': record[5],
+            'converted_filepath': record[6],
+            'conversion_format': record[7],
+            'status': record[8],
+            'timestamp': record[8]
         } for record in tasks]
         
 
 def __extract_task(task):
     return {
-        'id': task[0], 
-        'source_uuid': task[1], 
-        'source_name': task[2],
-        'source_format': task[3],
-        'target_format': task[4],
-        'create_datetime': task[5],
-        'start_convert': task[6],
-        'end_convert': task[7],
-        'status': task[8]
+        'id': task[0],
+        'original_filename': task[3],
+        'converted_filename': task[4],
+        'original_filepath': task[5],
+        'converted_filepath': task[6],
+        'conversion_format': task[7],
+        'status': task[8],
+        'timestamp': task[8]
     } 
 
 

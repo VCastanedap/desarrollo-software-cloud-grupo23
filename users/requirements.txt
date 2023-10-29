@@ -3,6 +3,7 @@ click
 celery
 colorama
 Flask
+Flask-Cors
 Flask-SQLAlchemy
 Flask-JWT-Extended
 importlib-metadata

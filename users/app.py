@@ -3,6 +3,7 @@ from os import environ
 
 
 from flask import Flask, jsonify, request, session
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
 from flask_sqlalchemy import SQLAlchemy
@@ -22,6 +23,7 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 
 db = SQLAlchemy(app)
 
+cors = CORS(app)
 
 class User(db.Model):
     __tablename__ = 'users'

@@ -2,15 +2,27 @@ from os import environ
 import io
 
 import requests
+import logging
+
 from flask import Flask, request,jsonify
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt
 from flask_sqlalchemy import SQLAlchemy
 from flask import send_file
 
 
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+
 app = Flask(__name__)
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_celery:flask_celery@db:5432/flask_celery'
+app.logger.setLevel(logging.INFO)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
@@ -18,30 +30,20 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 
 db = SQLAlchemy(app)
 
-@app.route("/")
-def hello():
-    print('')
-    print('')
-    print('')
-    print(request)
-    print('')
-    print('')
-    print('')
-    print(dir(request))
-
-    #print(requests.get('localhost:8001/'))
-
-    # return requests.get('localhost:8001/')
-    return 'Hello'
+cors = CORS(app)
 
 
 @app.route("/api/users/signup", methods=['POST'])
 def signup():
-    data = request.json
-    destination_url = "http://localhost:8001/api/users/signup"  # URL del servicio de usuarios en localhost
-    headers = {"Authorization": "Bearer your_token"}
-    response = requests.post(destination_url, json=data, headers=headers)
-    return response.json(), response.status_code
+    try:
+        print(request.json)
+        response = requests.post('http://localhost:8001/api/users/signup', json=request.json)
+    except Exception as e:
+        logging.error(str(e))
+        return str(e), 50
+    else:
+        return response.content, response.status_code
+
 
 @app.route("/api/auth/login", methods=['POST'])
 def login():

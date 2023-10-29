@@ -36,8 +36,7 @@ cors = CORS(app)
 @app.route("/api/users/signup", methods=['POST'])
 def signup():
     try:
-        print(request.json)
-        response = requests.post('http://localhost:8001/api/users/signup', json=request.json)
+        response = requests.post('http://users:8001/signup', json=request.json)
     except Exception as e:
         logging.error(str(e))
         return str(e), 50

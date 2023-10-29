@@ -24,7 +24,7 @@ services:
     ports:
       - "5001:5001"
     environment:
-      - DB_URL=postgresql://postgres:postgres@flask_db:5432/postgres
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
     depends_on:
       - postgres
     volumes:
@@ -46,7 +46,7 @@ services:
       context: ./users
       dockerfile: Dockerfile
     environment:
-      - DB_URL=postgresql://postgres:postgres@flask_db:5432/postgres
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
     depends_on:
       - postgres
     volumes:
@@ -57,7 +57,7 @@ services:
       context: ./tasks
       dockerfile: Dockerfile
     environment:
-      - DB_URL=postgresql://postgres:postgres@flask_db:5432/postgres
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
     depends_on:
       - postgres
     volumes:

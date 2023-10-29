@@ -1,3 +1,4 @@
+import hashlib
 from os import environ
 # import psycopg2
 
@@ -39,7 +40,6 @@ class User(db.Model):
 #         model = User
 #         include_relationships = True
 #         load_instance = True
-        
 #     id = fields.String()
 
 
@@ -66,50 +66,63 @@ def hello():
     return jsonify({"message": "Hello to Users", "result": __validate_user()})
 
 
-# @app.route("/api/users/signup", methods=['POST'])
-# def signup():
-#     user_name = request.json['username']
-#     email = request.json['email']
-#     password = request.json['password']
+@app.route("/signup", methods=['POST'])
+def signup():
+    this_username = request.json.get('username')
+    this_password = request.json['password']
     
-#     if not __validate_user(email=email):
-#         try:
-#             conn = psycopg2.connect(
-#                 dbname="tu_basededatos",
-#                 user="tu_usuario",
-#                 password="tu_contraseña",
-#                 host="tu_host",
-#                 port="tu_puerto"
-#             )
-#             cursor = conn.cursor()
+    try:
+        new_user = User(
+            username=request.json.get('username'), 
+            email=request.json.get('email'),
+            password = hashlib.md5(this_password.encode('utf-8')).hexdigest()
+        )
+    except Exception as e:
+        return {"msg": "Bad request"}, 400
+    else:
+        db.session.add(new_user)
+        db.session.commit()
+        access_token = create_access_token(identity=this_username)
+        return {"msg": "Done", "id": new_user.id, "access_token": access_token}, 200
 
-#             sql_query = """
-#             INSERT INTO "user" (username, email, password) 
-#             VALUES (%s, %s, %s) RETURNING id
-#             """
-#             values = (user_name, email, password)
+    # if not __validate_user(email=email):
+    #     try:
+    #         conn = psycopg2.connect(
+    #             dbname="tu_basededatos",
+    #             user="tu_usuario",
+    #             password="tu_contraseña",
+    #             host="tu_host",
+    #             port="tu_puerto"
+    #         )
+    #         cursor = conn.cursor()
 
-#             cursor.execute(sql_query, values)
-#             user_id = cursor.fetchone()[0]
-#             conn.commit()
+    #         sql_query = """
+    #         INSERT INTO "user" (username, email, password) 
+    #         VALUES (%s, %s, %s) RETURNING id
+    #         """
+    #         values = (user_name, email, password)
 
-#             access_token = create_access_token(identity=user_name)
+    #         cursor.execute(sql_query, values)
+    #         user_id = cursor.fetchone()[0]
+    #         conn.commit()
 
-#             cursor.close()
-#             conn.close()
+    #         access_token = create_access_token(identity=user_name)
 
-#             return {
-#                 "message": "User created!",
-#                 "access_token": access_token
-#             }
-#         except Exception as e:
-#             return {
-#                 "message": "Bad request"
-#             }
-#     else:
-#         return {
-#             "message": "User with this email already exists"
-#         }
+    #         cursor.close()
+    #         conn.close()
+
+    #         return {
+    #             "message": "User created!",
+    #             "access_token": access_token
+    #         }
+    #     except Exception as e:
+    #         return {
+    #             "message": "Bad request"
+    #         }
+    # else:
+    #     return {
+    #         "message": "User with this email already exists"
+    #     }
 
 # @app.route("/api/auth/login", methods=["POST"])
 # def login():

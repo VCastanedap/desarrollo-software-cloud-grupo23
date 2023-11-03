@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from os import environ
 
 from flask import Flask, request, session
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
 from flask_sqlalchemy import SQLAlchemy
@@ -22,6 +25,26 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 jwt = JWTManager(app)
 
 db = SQLAlchemy(app)
+
+cors = CORS(app)
+
+
+class FileConversionTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User', backref=db.backref('file_conversion_tasks', lazy=True))
+    original_filename = db.Column(db.String(255), nullable=False)
+    converted_filename = db.Column(db.String(255))
+    original_filepath = db.Column(db.String(255), nullable=False)
+    converted_filepath = db.Column(db.String(255))
+    conversion_format = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), default='unavailable')
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+@app.route("/tasks")
+def hello():
+    return jsonify({"message": "Hello to Tasks"})
 
 """
 connection = psycopg2.connect(

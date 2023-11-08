@@ -49,21 +49,39 @@ def logout():
         return {"message": "done"}
 
 
+def __validate_token(token):
+    if token is None or not token.startswith('Bearer '):
+        return False
+    else:
+        return True
+
+
 @app.route("/api/tasks/list", methods=["GET"])
 def list_tasks():
-    destination_url = "http://localhost:8003/api/tasks/list"  # URL del servicio de tareas en localhost
-    headers = {"Authorization": "Bearer your_token"}
-    response = requests.get(destination_url, headers=headers)
-    return response.json(), response.status_code
+    if __validate_token(token=request.headers.get('Authorization')):
+        response = requests.get("http://tasks:9001/api/tasks/list")
+        return response.content, response.status_code
+    else:
+        return jsonify({'error': 'Authorization header is missing or invalid'}), 401 
+    
 
 
 @app.route("/api/tasks/retrieve/<task_id>", methods=["GET"])
 def retrieve_task(task_id):
-    destination_url = f"http://localhost:8003/api/tasks/retrieve/{task_id}"  # URL del servicio de tareas en localhost
-    headers = {"Authorization": "Bearer your_token"}
-    response = requests.get(destination_url, headers=headers)
-    return response.json(), response.status_code
+    if __validate_token(token=request.headers.get('Authorization')):
+        response = requests.get(f"http://tasks:9001/api/tasks/retrieve/{task_id}")
+        return response.content, response.status_code
+    else:
+        return jsonify({'error': 'Authorization header is missing or invalid'}), 401 
 
+
+@app.route("/api/tasks/create", methods=["POST"])
+def create_task():
+    if __validate_token(token=request.headers.get('Authorization')):
+        response = requests.post(f"http://tasks:9001/api/tasks/create", json=request.json)
+        return response.content, response.status_code
+    else:
+        return jsonify({'error': 'Authorization header is missing or invalid'}), 401 
 
 
 @app.route("/api/download/<filename>", methods=["GET"])

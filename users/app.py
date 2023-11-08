@@ -3,7 +3,7 @@ import hashlib
 import psycopg2
 
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
@@ -15,13 +15,14 @@ load_dotenv()
 app = Flask(__name__)
 
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
+app.secret_key = 'super secret key'
+app.config['SESSION_TYPE'] = 'filesystem'
 
-
-DB_HOST=""
-DB_PORT=""
-DB_USERNAME=""
-DB_PASSWORD=""
-DB_NAME=""
+DB_HOST="34.136.191.217"
+DB_PORT="5432"
+DB_USERNAME="postgres"
+DB_PASSWORD="U{p;ky&~kN*Y_hv-"
+DB_NAME="cloud-testing"
 
 
 def __validate_user(data):
@@ -78,49 +79,29 @@ def signup():
     else:
         return {"msg": "User already exists"}
 
-# @app.route("/api/auth/login", methods=["POST"])
-# def login():
-#     email = request.json["email"]
-#     password = request.json["password"]
 
-#     try:
-#         sql_query = "SELECT * FROM usuario WHERE email = %s"
-#         values = (email,)
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    email = request.json["email"]
+    username = request.json["username"]
 
-#         cursor.execute(sql_query, values)
-#         user = cursor.fetchone()
+    if not __validate_user(data={"username": username, "email": email}):
+        return {"msg": "El usuario no existe"}, 400
+    else:
+        return {"token": create_access_token(identity=username)}
+    
 
-#         if user and user[2] == password:  # La columna 2 debe ser la columna de contraseña en la tabla
-#             # Autenticación exitosa, generar un token JWT
-#             access_token = create_access_token(identity=user[1])  # El nombre de usuario está en la columna 1
-#             cursor.close()
-#             conn.close()
-#             return {
-#                 "message": "Success login",
-#                 "access_token": access_token
-#             }
-#         else:
-#             # Autenticación fallida
-#             cursor.close()
-#             conn.close()
-#             return {
-#                 "message": "Invalid email or password"
-#             }
-#     except Exception as e:
-#         return {
-#             "message": "Error during authentication"
-#         }
-
-
-# @app.route("/api/auth//logout")
-# def logout():
-#     session.pop("username", None)
-#     return {
-#         "message": "Finished session"
-#     }
+@app.route("/api/auth/logout", methods=["GET"])
+def logout():
+    session.pop("username", None)
+    return {
+        "message": "Finished session"
+    }
 
 
 jwt = JWTManager(app)
 
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8001)
+

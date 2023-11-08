@@ -3,7 +3,7 @@ import io
 import requests
 import logging
 
-from flask import Flask, request,jsonify
+from flask import Flask, request,jsonify, redirect
 
 
 logging.basicConfig(
@@ -18,13 +18,11 @@ app = Flask(__name__)
 
 app.logger.setLevel(logging.INFO)
 
-# cors = CORS(app)
 
-
-@app.route("/api/auth/login", methods=['POST'])
+@app.route("/api/users/login", methods=['POST'])
 def login():
     try:
-        response = requests.post("http://localhost:8001/api/auth/login", json=request.json)
+        response = requests.post("http://users:8001/api/auth/login", json=request.json)
     except Exception as e:
         return str(e), 500
     else:
@@ -41,15 +39,14 @@ def signup():
         return response.content, response.status_code
 
 
-@app.route("/api/auth/logout", methods=["GET"])
+@app.route("/api/users/logout", methods=["GET"])
 def logout():
-    auth_service_url = "http://localhost:8001/api/auth/logout"  # Reemplaza con la URL del servicio de autenticación
-    response = requests.post(auth_service_url, headers=request.headers, json=request.json)
-
-    if response.status_code == 200:
-        return 0 #redirect("/login")
-
-    return jsonify({"error": "Error al cerrar sesión en el servicio de autenticación"}), 500
+    try:
+        requests.get("http://users:8001/api/auth/logout")
+    except Exception as e:
+        return str(e), 500
+    else:
+        return {"message": "done"}
 
 
 @app.route("/api/tasks/list", methods=["GET"])
@@ -86,8 +83,5 @@ def download_file(filename):
 
 
 
-# jwt = JWTManager(app)
-
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9000)
+    app.run(host="0.0.0.0", port=5001)

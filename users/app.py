@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
 
 
-DB_HOST="" 
+DB_HOST=""
 DB_PORT=""
 DB_USERNAME=""
 DB_PASSWORD=""
@@ -63,7 +63,7 @@ def signup():
 
     encrypted_password = hashlib.md5(this_password.encode('utf-8')).hexdigest()
 
-    if not __validate_user:
+    if not __validate_user(data={"username":this_username, "email": this_email}):
         try:
             __insert_user(data={
                 "username": this_username,
@@ -120,7 +120,7 @@ def signup():
 #     }
 
 
-# jwt = JWTManager(app)
+jwt = JWTManager(app)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8001)

@@ -3,6 +3,11 @@ FROM python:3.9-slim
 
 RUN apt-get update
 # Set the working directory in the container to /app
+
+ENV PYTHONDONTWRITEBYTECODE 1
+
+ENV PYTHONUNBUFFERED 1
+
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app

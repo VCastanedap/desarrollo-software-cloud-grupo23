@@ -2,6 +2,7 @@ blinker
 click
 celery
 colorama
+python-dotenv
 Flask
 Flask-Cors
 Flask-SQLAlchemy

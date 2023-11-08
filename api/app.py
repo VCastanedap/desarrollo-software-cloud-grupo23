@@ -1,14 +1,9 @@
-from os import environ
 import io
 
 import requests
 import logging
 
 from flask import Flask, request,jsonify
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt
-from flask_sqlalchemy import SQLAlchemy
-from flask import send_file
 
 
 logging.basicConfig(
@@ -23,34 +18,28 @@ app = Flask(__name__)
 
 app.logger.setLevel(logging.INFO)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DB_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'frase-secreta'
-app.config['PROPAGATE_EXCEPTIONS'] = True
+# cors = CORS(app)
 
-db = SQLAlchemy(app)
 
-cors = CORS(app)
+@app.route("/api/auth/login", methods=['POST'])
+def login():
+    try:
+        response = requests.post("http://localhost:8001/api/auth/login", json=request.json)
+    except Exception as e:
+        return str(e), 500
+    else:
+        return response.content, response.status_code
 
 
 @app.route("/api/users/signup", methods=['POST'])
 def signup():
     try:
-        response = requests.post('http://users:8001/signup', json=request.json)
+        response = requests.post('http://users:8001/api/auth/signup', json=request.json)
     except Exception as e:
-        logging.error(str(e))
-        return str(e), 50
+        return str(e), 500
     else:
         return response.content, response.status_code
 
-
-@app.route("/api/auth/login", methods=['POST'])
-def login():
-    data = request.json
-    destination_url = "http://localhost:8002/api/auth/login"  # URL del servicio de autenticación en localhost
-    headers = {"Authorization": "Bearer your_token"}
-    response = requests.post(destination_url, json=data, headers=headers)
-    return response.json(), response.status_code
 
 @app.route("/api/auth/logout", methods=["GET"])
 def logout():
@@ -97,4 +86,8 @@ def download_file(filename):
 
 
 
-jwt = JWTManager(app)
+# jwt = JWTManager(app)
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=9000)

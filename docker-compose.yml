@@ -23,10 +23,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5001:5001"
-    environment:
-      - DB_URL=postgresql://postgres:postgres@34.28.72.219:5432/postgres
-    depends_on:
-      - postgres
     volumes:
       - .:/api
 
@@ -45,10 +41,6 @@ services:
     build:
       context: ./users
       dockerfile: Dockerfile
-    environment:
-      - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
-    depends_on:
-      - postgres
     volumes:
       - .:/users
 

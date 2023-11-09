@@ -84,26 +84,43 @@ def __build_convert_query(data):
 
 def __build_upload_event(data):
     return {
-        
+        "user_id": data.get('user_id'),
+        "file_name": data.get('file_name'),
+        "input_path": data.get('input_path')
+    }
+
+
+def __build_convert_event(data):
+    return {
+        "user_id": data.get('user_id'),
+        "file_name": data.get('file_name'),
+        "input_path": data.get('input_path'),
+        "conversion_format": data.get('conversion_format')
     }
 
 
 @app.route('/api/tasks/create', methods=["POST"])
 def create_task():
     if request.json.get("task_type") == 'upload_file':
-        query = __build_upload_query(data=request.json)
-        
+        with connection.cursor() as cr:
+            cr.execute(__build_upload_query(data=request.json))
+
+        celery.send_task(
+            "app.upload_file", 
+            args=[__build_upload_event(data=request.json)], 
+            queue="task_queue"
+        )
+
     elif request.json.get("task_type") == 'convert_file':
-        query = __build_convert_query(data=request.json)
+        with connection.cursor() as cr:
+            cr.execute(__build_convert_query(data=request.json))
 
-    with connection.cursor() as cr:
-        cr.execute(query)
-        return jsonify({"tasks": __extract_tasks(tasks=cr.fetchone())}), 200
+        celery.send_task(
+            "app.convert_file", 
+            args=[__build_convert_event(data=request.json)], 
+            queue="task_queue"
+        )
 
-
-    celery.send_task(
-        "app.upload_file", args=[eventData], queue="task_queue"
-    )
 
 
 @app.route('/api/tasks/retrieve/<task_id>', methods=["GET"])

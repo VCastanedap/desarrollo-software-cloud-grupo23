@@ -1,12 +1,17 @@
 from flask import Flask, request
 from flask_jwt_extended import JWTManager
 from flask import jsonify
-
-
+from celery import Celery
 import psycopg2
 
-
 app = Flask(__name__)
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+
+celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+
+celery.conf.task_default_queue = "defaul_queue"
 
 
 connection = psycopg2.connect(
@@ -64,6 +69,7 @@ def __build_upload_query(data):
         RETURNING id
     """
 
+
 def __build_convert_query(data):
     user_id = data.get('user_id')
     output_file_name = data.get('file_name')
@@ -76,17 +82,28 @@ def __build_convert_query(data):
         RETURNING id
     """
 
+def __build_upload_event(data):
+    return {
+        
+    }
+
 
 @app.route('/api/tasks/create', methods=["POST"])
 def create_task():
     if request.json.get("task_type") == 'upload_file':
         query = __build_upload_query(data=request.json)
+        
     elif request.json.get("task_type") == 'convert_file':
         query = __build_convert_query(data=request.json)
 
     with connection.cursor() as cr:
         cr.execute(query)
         return jsonify({"tasks": __extract_tasks(tasks=cr.fetchone())}), 200
+
+
+    celery.send_task(
+        "app.upload_file", args=[eventData], queue="task_queue"
+    )
 
 
 @app.route('/api/tasks/retrieve/<task_id>', methods=["GET"])

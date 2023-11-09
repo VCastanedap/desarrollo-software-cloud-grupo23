@@ -19,6 +19,11 @@ celery.conf.task_default_queue = "defaul_queue"
 
 
 @celery.task
+def upload_file(data):
+    pass
+
+
+@celery.task
 def convert_file(data):
     file = data.get('file')
     conversion_format = data.get('conversion_format')
@@ -77,10 +82,3 @@ def allowed_format(extension):
 #             f'Contenido del directorio "uploads" después de no encontrar el archivo: {os.listdir(upload_folder)}'
 #         )
 #         return "Archivo no encontrado", 404
-    
-    
-
-# @app.route('/api/upload/<filename>', methods=['POST'])
-# def upload_file():
-#     # try create new task with the file 
-#     pass

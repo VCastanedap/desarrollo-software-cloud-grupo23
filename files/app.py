@@ -84,7 +84,3 @@ def allowed_format(extension):
 # def upload_file():
 #     # try create new task with the file 
 #     pass
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3001)

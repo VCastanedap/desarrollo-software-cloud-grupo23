@@ -99,11 +99,20 @@ def __build_convert_event(data):
     }
 
 
+def __extract_create_task_result(data):
+    return {
+        "first": data[0],
+        "secound": data[1]
+    }
+
+
+
 @app.route('/api/tasks/create', methods=["POST"])
 def create_task():
     if request.json.get("task_type") == 'upload_file':
         with connection.cursor() as cr:
             cr.execute(__build_upload_query(data=request.json))
+            result = __extract_create_task_result(data=cr.fetchone())
 
         celery.send_task(
             "app.upload_file", 
@@ -114,6 +123,7 @@ def create_task():
     elif request.json.get("task_type") == 'convert_file':
         with connection.cursor() as cr:
             cr.execute(__build_convert_query(data=request.json))
+            result = __extract_create_task_result(data=cr.fetchone())
 
         celery.send_task(
             "app.convert_file", 

@@ -116,7 +116,7 @@ def create_task():
         celery.send_task(
             "app.upload_file", 
             args=[__build_upload_event(data=request.json)], 
-            queue="task_queue"
+            queue="defaul_queue"
         )
         return {"msg": "Done", "task_id": result}, 201
 
@@ -127,8 +127,8 @@ def create_task():
 
         celery.send_task(
             "app.convert_file", 
-            args=[__build_convert_event(data=request.json)], 
-            queue="task_queue"
+            args=[__build_convert_event(data=request.json)],
+            queue="defaul_queue"
         )
         return {"msg": "Done", "task_id": result}, 201
 

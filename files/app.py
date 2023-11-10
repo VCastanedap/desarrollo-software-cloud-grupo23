@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
 
 from celery import Celery
+from google.cloud import storage
 
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
@@ -20,8 +21,10 @@ celery.conf.task_default_queue = "defaul_queue"
 
 @celery.task
 def upload_file(data):
-    pass
-
+    storage_client = storage.Client()
+    buckets = list(storage_client.list_buckets())
+    print(buckets)
+    
 
 @celery.task
 def convert_file(data):

@@ -85,3 +85,7 @@ def allowed_format(extension):
 #             f'Contenido del directorio "uploads" después de no encontrar el archivo: {os.listdir(upload_folder)}'
 #         )
 #         return "Archivo no encontrado", 404
+#
+#
+# LBO8h>edScYt/Jcd
+# bdkJ1O_BtN0=oX40

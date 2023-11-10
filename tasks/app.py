@@ -15,10 +15,10 @@ celery.conf.task_default_queue = "defaul_queue"
 
 
 connection = psycopg2.connect(
-    host="34.28.55.3",
+    host="34.41.231.100",
     port="5432",
     user="postgres",
-    password="U{p;ky&~kN*Y_hv-",
+    password="bdkJ1O_BtN0=oX40",
     database="cloud-testing"
 )
 
@@ -64,8 +64,8 @@ def __build_upload_query(data):
     input_path = data.get('input_path')
     
     return f"""
-        INSERT INTO file_conversion_task (user_id, original_filename, original_filepath, status)
-        VALUES ({user_id}, {file_name}, {input_path}, 'uploading')
+        INSERT INTO tasks (user_id, original_filename, original_filepath, status)
+        VALUES ({user_id}, '{file_name}', '{input_path}', 'uploading')
         RETURNING id
     """
 
@@ -77,8 +77,8 @@ def __build_convert_query(data):
     conversion_format = data.get('conversion_format')
     
     return f"""
-        INSERT INTO file_conversion_task (user_id, converted_filename, converted_filepath, conversion_format, status)
-        VALUES ({user_id}, {output_file_name}, {output_path}, {conversion_format}, 'formatting')
+        INSERT INTO tasks (user_id, converted_filename, converted_filepath, conversion_format, status)
+        VALUES ({user_id}, '{output_file_name}', '{output_path}', '{conversion_format}', 'formatting')
         RETURNING id
     """
 
@@ -101,8 +101,7 @@ def __build_convert_event(data):
 
 def __extract_create_task_result(data):
     return {
-        "first": data[0],
-        "secound": data[1]
+        "task_id": data[0]
     }
 
 
@@ -119,6 +118,7 @@ def create_task():
             args=[__build_upload_event(data=request.json)], 
             queue="task_queue"
         )
+        return {"msg": "Done", "task_id": result}, 201
 
     elif request.json.get("task_type") == 'convert_file':
         with connection.cursor() as cr:
@@ -131,6 +131,7 @@ def create_task():
             queue="task_queue"
         )
 
+        return {"msg": "Done", "task_id": result}, 201
 
 
 @app.route('/api/tasks/retrieve/<task_id>', methods=["GET"])

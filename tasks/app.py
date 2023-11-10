@@ -130,7 +130,6 @@ def create_task():
             args=[__build_convert_event(data=request.json)], 
             queue="task_queue"
         )
-
         return {"msg": "Done", "task_id": result}, 201
 
 

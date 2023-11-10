@@ -15,16 +15,13 @@ services:
     volumes:
       - .:/api
 
-  # broker:
-  #   build:
-  #     context: ./broker
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     CELERY_BROKER_URL: redis://redis:6379/0
-  #     CELERY_RESULT_BACKEND: redis://redis:6379/0
-  #   depends_on:
-  #     - redis
-  #   volumes: ['./broker:/broker']
+  files:
+    build:
+      context: ./files
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    volumes: ['./files:/files']
 
   users:
     build:

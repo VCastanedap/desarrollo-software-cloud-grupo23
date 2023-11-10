@@ -21,7 +21,8 @@ celery.conf.task_default_queue = "defaul_queue"
 
 @celery.task
 def upload_file(data):
-    storage_client = storage.Client()
+    storage_client = storage.Client.from_service_account_json(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
+    # storage_client = storage.Client()
     buckets = list(storage_client.list_buckets())
     print(buckets)
     

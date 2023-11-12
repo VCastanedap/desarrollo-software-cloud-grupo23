@@ -46,4 +46,4 @@ volumes:
 
 secrets:
   gcp-credentials:
-    file: $HOME/.config/gcloud/application_default_credentials.json
+    file: /home/victor/projects/proyecto-cloud-computing-miso-1d889a810e05.json

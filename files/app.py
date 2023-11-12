@@ -56,12 +56,9 @@ def __convert_video(output_path, output_format, video):
 
 @celery.task
 def convert_file(data):
-    storage_client = __get_storage_client()
-
-    
-    
     file_name = data.get('file_name')
     conversion_format = data.get('conversion_format')
+    result_file_name = f"converted_{file_name.split('.')[0]}.{conversion_format}"
     storage_client = __get_storage_client()
 
     blobs = storage_client.list_blobs(os.getenv('BUCKET_NAME'))
@@ -72,13 +69,22 @@ def convert_file(data):
 
     if conversion_format in ALLOWED_FORMATS:
         video = VideoFileClip(file_name)
-        video.write_videofile(f"converted_{file_name.split('.')[0]}.{conversion_format}", codec='libvpx', audio_codec='libvorbis')
+
+        __convert_video(
+            output_path=result_file_name, 
+            output_format=conversion_format, 
+            video=video
+        )
+
+        __uploaded_converted_file(result_file_name=result_file_name)
 
 
-        bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
-        with open(f"converted_{file_name.split('.')[0]}.{conversion_format}", 'rb') as f:
-            uploaded_blob = bucket.blob(f"converted_{file_name.split('.')[0]}.{conversion_format}")
-            uploaded_blob.upload_from_file(f)
+def __uploaded_converted_file(result_file_name):
+    storage_client = __get_storage_client()
+    bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
+    with open(result_file_name, 'rb') as f:
+        uploaded_blob = bucket.blob(result_file_name)
+        uploaded_blob.upload_from_file(f)
 
 
 UPLOAD_FOLDER = 'uploads'

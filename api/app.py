@@ -3,7 +3,7 @@ import io
 import requests
 import logging
 
-from flask import Flask, request,jsonify, redirect
+from flask import Flask, request, jsonify, redirect
 
 
 logging.basicConfig(
@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 
 
-@app.route("/api/users/login", methods=['POST'])
+@app.route("/api/users/login", methods=["POST"])
 def login():
     try:
         response = requests.post("http://users:8001/api/auth/login", json=request.json)
@@ -29,10 +29,10 @@ def login():
         return response.content, response.status_code
 
 
-@app.route("/api/users/signup", methods=['POST'])
+@app.route("/api/users/signup", methods=["POST"])
 def signup():
     try:
-        response = requests.post('http://users:8001/api/auth/signup', json=request.json)
+        response = requests.post("http://users:8001/api/auth/signup", json=request.json)
     except Exception as e:
         return str(e), 500
     else:
@@ -50,7 +50,7 @@ def logout():
 
 
 def __validate_token(token):
-    if token is None or not token.startswith('Bearer '):
+    if token is None or not token.startswith("Bearer "):
         return False
     else:
         return True
@@ -58,30 +58,31 @@ def __validate_token(token):
 
 @app.route("/api/tasks/list", methods=["GET"])
 def list_tasks():
-    if __validate_token(token=request.headers.get('Authorization')):
+    if __validate_token(token=request.headers.get("Authorization")):
         response = requests.get("http://tasks:9001/api/tasks/list")
         return response.content, response.status_code
     else:
-        return jsonify({'error': 'Authorization header is missing or invalid'}), 401 
-    
+        return jsonify({"error": "Authorization header is missing or invalid"}), 401
 
 
 @app.route("/api/tasks/retrieve/<task_id>", methods=["GET"])
 def retrieve_task(task_id):
-    if __validate_token(token=request.headers.get('Authorization')):
+    if __validate_token(token=request.headers.get("Authorization")):
         response = requests.get(f"http://tasks:9001/api/tasks/retrieve/{task_id}")
         return response.content, response.status_code
     else:
-        return jsonify({'error': 'Authorization header is missing or invalid'}), 401 
+        return jsonify({"error": "Authorization header is missing or invalid"}), 401
 
 
 @app.route("/api/tasks/create", methods=["POST"])
 def create_task():
-    if __validate_token(token=request.headers.get('Authorization')):
-        response = requests.post(f"http://tasks:9001/api/tasks/create", json=request.json)
+    if __validate_token(token=request.headers.get("Authorization")):
+        response = requests.post(
+            f"http://tasks:9001/api/tasks/create", json=request.json
+        )
         return response.content, response.status_code
     else:
-        return jsonify({'error': 'Authorization header is missing or invalid'}), 401 
+        return jsonify({"error": "Authorization header is missing or invalid"}), 401
 
 
 @app.route("/api/download/<filename>", methods=["GET"])
@@ -92,13 +93,15 @@ def download_file(filename):
     if response.status_code == 200:
         file_content = response.content
         return send_file(
-            io.BytesIO(file_content),
-            as_attachment=True,
-            download_name=filename
+            io.BytesIO(file_content), as_attachment=True, download_name=filename
         )
 
-    return jsonify({"error": "Error al descargar el archivo desde el servicio de descarga"}), 500
-
+    return (
+        jsonify(
+            {"error": "Error al descargar el archivo desde el servicio de descarga"}
+        ),
+        500,
+    )
 
 
 if __name__ == "__main__":

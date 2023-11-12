@@ -14,15 +14,15 @@ load_dotenv()
 
 app = Flask(__name__)
 
-app.config['JWT_SECRET_KEY'] = 'frase-secreta'
-app.secret_key = 'super secret key'
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config["JWT_SECRET_KEY"] = "frase-secreta"
+app.secret_key = "super secret key"
+app.config["SESSION_TYPE"] = "filesystem"
 
-DB_HOST="34.41.231.100"
-DB_PORT="5432"
-DB_USERNAME="postgres"
-DB_PASSWORD="bdkJ1O_BtN0=oX40"
-DB_NAME="cloud-testing"
+DB_HOST = "34.41.231.100"
+DB_PORT = "5432"
+DB_USERNAME = "postgres"
+DB_PASSWORD = "bdkJ1O_BtN0=oX40"
+DB_NAME = "cloud-testing"
 
 
 def __validate_user(data):
@@ -47,7 +47,7 @@ def __insert_user(data):
         dbname=DB_NAME, user=DB_USERNAME, password=DB_PASSWORD, host=DB_HOST
     ) as conn:
         with conn.cursor() as cur:
-            result = cur.execute (
+            result = cur.execute(
                 f"""
                     INSERT INTO users (username, password, email)
                     VALUES ('{data.get("username")}', '{data.get("password")}', '{data.get("email")}');
@@ -56,21 +56,23 @@ def __insert_user(data):
             return result
 
 
-@app.route("/api/auth/signup", methods=['POST'])
+@app.route("/api/auth/signup", methods=["POST"])
 def signup():
-    this_username = request.json.get('username')
-    this_password = request.json['password']
-    this_email = request.json['email']
+    this_username = request.json.get("username")
+    this_password = request.json["password"]
+    this_email = request.json["email"]
 
-    encrypted_password = hashlib.md5(this_password.encode('utf-8')).hexdigest()
+    encrypted_password = hashlib.md5(this_password.encode("utf-8")).hexdigest()
 
-    if not __validate_user(data={"username":this_username, "email": this_email}):
+    if not __validate_user(data={"username": this_username, "email": this_email}):
         try:
-            __insert_user(data={
-                "username": this_username,
-                "password": encrypted_password,
-                "email": this_email
-            })
+            __insert_user(
+                data={
+                    "username": this_username,
+                    "password": encrypted_password,
+                    "email": this_email,
+                }
+            )
         except Exception as e:
             return {"msg": "Bad request"}, 400
         else:
@@ -89,14 +91,12 @@ def login():
         return {"msg": "El usuario no existe"}, 400
     else:
         return {"token": create_access_token(identity=username)}
-    
+
 
 @app.route("/api/auth/logout", methods=["GET"])
 def logout():
     session.pop("username", None)
-    return {
-        "message": "Finished session"
-    }
+    return {"message": "Finished session"}
 
 
 jwt = JWTManager(app)
@@ -104,4 +104,3 @@ jwt = JWTManager(app)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8001)
-

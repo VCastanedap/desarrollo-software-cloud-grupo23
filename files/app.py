@@ -10,18 +10,22 @@ from celery import Celery
 from google.cloud import storage
 
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
 
-celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
 celery.conf.task_default_queue = "defaul_queue"
 
 
+UPLOAD_FOLDER = "uploads"
+ALLOWED_FORMATS = ["mp4", "webm", "avi", "mpeg", "wmv"]
+
+
 def __get_storage_client():
     return storage.Client.from_service_account_json(
-        os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     )
 
 
@@ -29,40 +33,46 @@ def __get_storage_client():
 def upload_file(data):
     storage_client = __get_storage_client()
 
-    bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
+    bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
 
     blob = bucket.blob(f"uploaded_{data.get('file_name')}")
-    
-    with open(data.get('input_path'), 'rb') as f:
+
+    with open(data.get("input_path"), "rb") as f:
         blob.upload_from_file(f)
-    
-    return {
-        "message": "Done", "status_code": 200
-    }
+
+    return {"message": "Done", "status_code": 200}
 
 
 def __convert_video(output_path, output_format, video):
-    if output_format == 'mp4':
-        video.write_videofile(output_path, codec='libx264', audio_codec='aac')
-    elif output_format == 'webm':
-        video.write_videofile(output_path, codec='libvpx', audio_codec='libvorbis')
-    elif output_format == 'avi':
-        video.write_videofile(output_path, codec='libxvid', audio_codec='mp3')
-    elif output_format == 'mpeg':
-        video.write_videofile(output_path, codec='mpeg4', audio_codec='mp3')
-    elif output_format == 'wmv':
-        video.write_videofile(output_path, codec='wmv2', audio_codec='wmav2')
+    if output_format == "mp4":
+        video.write_videofile(output_path, codec="libx264", audio_codec="aac")
+    elif output_format == "webm":
+        video.write_videofile(output_path, codec="libvpx", audio_codec="libvorbis")
+    elif output_format == "avi":
+        video.write_videofile(output_path, codec="libxvid", audio_codec="mp3")
+    elif output_format == "mpeg":
+        video.write_videofile(output_path, codec="mpeg4", audio_codec="mp3")
+    elif output_format == "wmv":
+        video.write_videofile(output_path, codec="wmv2", audio_codec="wmav2")
+
+
+def __uploaded_converted_file(result_file_name):
+    storage_client = __get_storage_client()
+    bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
+    with open(result_file_name, "rb") as f:
+        uploaded_blob = bucket.blob(result_file_name)
+        uploaded_blob.upload_from_file(f)
 
 
 @celery.task
 def convert_file(data):
-    file_name = data.get('file_name')
-    conversion_format = data.get('conversion_format')
+    file_name = data.get("file_name")
+    conversion_format = data.get("conversion_format")
     result_file_name = f"converted_{file_name.split('.')[0]}.{conversion_format}"
     storage_client = __get_storage_client()
 
-    blobs = storage_client.list_blobs(os.getenv('BUCKET_NAME'))
-    
+    blobs = storage_client.list_blobs(os.getenv("BUCKET_NAME"))
+
     for b in blobs:
         if b.name == file_name:
             b.download_to_filename(b.name)
@@ -71,47 +81,27 @@ def convert_file(data):
         video = VideoFileClip(file_name)
 
         __convert_video(
-            output_path=result_file_name, 
-            output_format=conversion_format, 
-            video=video
+            output_path=result_file_name, output_format=conversion_format, video=video
         )
 
         __uploaded_converted_file(result_file_name=result_file_name)
 
+    return {"message": "Done", "status_code": 200}
 
-def __uploaded_converted_file(result_file_name):
+
+@celery.task
+def download_file(event):
+    file_name = event.get("file_name")
     storage_client = __get_storage_client()
-    bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
-    with open(result_file_name, 'rb') as f:
-        uploaded_blob = bucket.blob(result_file_name)
-        uploaded_blob.upload_from_file(f)
+
+    blobs = storage_client.list_blobs(os.getenv("BUCKET_NAME"))
+
+    for b in blobs:
+        if b.name == file_name:
+            b.download_to_filename(b.name)
+
+    return {"message": "Done", "status_code": 200}
 
 
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_FORMATS = ['mp4', 'webm', 'avi', 'mpeg', 'wmv']
-
-
-# @app.route("/api/download/<filename>")
-# def download_file(filename):
-#     try:
-#         file_path = os.path.join(upload_folder, filename)
-        
-#         file_stat = os.stat(file_path)
-#         permissions = stat.filemode(file_stat.st_mode)
-#         app.logger.info(f"Permissions for {file_path}: {permissions}")
-
-#         app.logger.info(
-#             f'Uploads before download: {os.listdir(upload_folder)}'
-#         )
-
-#         absolute_path = os.path.abspath(file_path)
-#         return send_file(absolute_path, as_attachment=True)
-#     except FileNotFoundError:
-#         app.logger.info(
-#             f'Contenido del directorio "uploads" después de no encontrar el archivo: {os.listdir(upload_folder)}'
-#         )
-#         return "Archivo no encontrado", 404
-#
-#
 # LBO8h>edScYt/Jcd
 # bdkJ1O_BtN0=oX40

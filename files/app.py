@@ -19,15 +19,26 @@ celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND
 celery.conf.task_default_queue = "defaul_queue"
 
 
+def __get_storage_client():
+    return storage.Client.from_service_account_json(
+        os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    )
+
+
 @celery.task
 def upload_file(data):
-    storage_client = storage.Client.from_service_account_json(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
-    bucket = storage_client.get_bucket('miso-cloud-development')
-    blob = bucket.blob('uploaded_presentacion_cabify.mp4')
+    storage_client = __get_storage_client()
+
+    bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
+
+    blob = bucket.blob(f"uploaded_{data.get('file_name')}")
     
-    with open('presentacion_cabify.mp4', 'rb') as f:
-        print(f)
+    with open(data.get('input_path'), 'rb') as f:
         blob.upload_from_file(f)
+    
+    return {
+        "message": "Done", "status_code": 200
+    }
 
 
 @celery.task

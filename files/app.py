@@ -41,43 +41,48 @@ def upload_file(data):
     }
 
 
+def __convert_video(output_path, output_format, video):
+    if output_format == 'mp4':
+        video.write_videofile(output_path, codec='libx264', audio_codec='aac')
+    elif output_format == 'webm':
+        video.write_videofile(output_path, codec='libvpx', audio_codec='libvorbis')
+    elif output_format == 'avi':
+        video.write_videofile(output_path, codec='libxvid', audio_codec='mp3')
+    elif output_format == 'mpeg':
+        video.write_videofile(output_path, codec='mpeg4', audio_codec='mp3')
+    elif output_format == 'wmv':
+        video.write_videofile(output_path, codec='wmv2', audio_codec='wmav2')
+
+
 @celery.task
 def convert_file(data):
-    file = data.get('file')
+    storage_client = __get_storage_client()
+
+    
+    
+    file_name = data.get('file_name')
     conversion_format = data.get('conversion_format')
+    storage_client = __get_storage_client()
 
-    if file.filename != '':
-        if not conversion_format and not allowed_format(conversion_format):
-            return jsonify({'error': 'Extensión de destino no especificada'}), 400
+    blobs = storage_client.list_blobs(os.getenv('BUCKET_NAME'))
+    
+    for b in blobs:
+        if b.name == file_name:
+            b.download_to_filename(b.name)
 
-        upload_folder = "/uploads"
-        os.makedirs(upload_folder, exist_ok=True)
-
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(upload_folder, filename)
-        file.save(file_path)
-        os.chmod(file_path, 0o644)
-
-        input_path = file_path
-        output_filename = f"converted_{filename.rsplit('.', 1)[0]}.{conversion_format}"
-        output_path = os.path.join(upload_folder, output_filename)
-
-        video = VideoFileClip(input_path)
-        video.write_videofile(output_path, codec='libx264')
-        os.chmod(output_path, 0o644)
+    if conversion_format in ALLOWED_FORMATS:
+        video = VideoFileClip(file_name)
+        video.write_videofile(f"converted_{file_name.split('.')[0]}.{conversion_format}", codec='libvpx', audio_codec='libvorbis')
 
 
-        converted_file_url = url_for('download_file', filename=output_filename)
-        flash('Conversión exitosa', 'success')
-        return jsonify({"converted_file_url": converted_file_url}), 400
+        bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
+        with open(f"converted_{file_name.split('.')[0]}.{conversion_format}", 'rb') as f:
+            uploaded_blob = bucket.blob(f"converted_{file_name.split('.')[0]}.{conversion_format}")
+            uploaded_blob.upload_from_file(f)
 
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_FORMATS = {'mp4', 'webm', 'avi', 'mpeg', 'wmv'}
-
-
-def allowed_format(extension):
-    return extension.lower() in ALLOWED_FORMATS
+ALLOWED_FORMATS = ['mp4', 'webm', 'avi', 'mpeg', 'wmv']
 
 
 # @app.route("/api/download/<filename>")

@@ -22,9 +22,13 @@ celery.conf.task_default_queue = "defaul_queue"
 @celery.task
 def upload_file(data):
     storage_client = storage.Client.from_service_account_json(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
-    buckets = list(storage_client.list_buckets())
-    print(buckets)
+    bucket = storage_client.get_bucket('miso-cloud-development')
+    blob = bucket.blob('uploaded_presentacion_cabify.mp4')
     
+    with open('presentacion_cabify.mp4', 'rb') as f:
+        print(f)
+        blob.upload_from_file(f)
+
 
 @celery.task
 def convert_file(data):

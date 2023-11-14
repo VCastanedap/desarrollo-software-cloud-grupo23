@@ -146,5 +146,39 @@ def delete_task(task_id):
         return jsonify({"task": __extract_task(task=cr.fetchone())})
 
 
+
+def __build_download_query(data):
+    user_id = data.get("user_id")
+    file_name = data.get("file_name")
+
+    return f"""
+        INSERT INTO tasks (user_id, original_filename, status)
+        VALUES ({user_id}, '{file_name}', 'downloading')
+        RETURNING id
+    """
+
+
+def __build_download_event(data):
+    return {
+        "user_id": data.get("user_id"),
+        "file_name": data.get("file_name"),
+    }
+
+
+@app.route("/api/tasks/create/download", methods=["POST"])
+def download_task():
+    with connection.cursor() as cr:
+        cr.execute(__build_download_query(data=request.json))
+        result = __extract_create_task_result(data=cr.fetchone())
+
+    celery.send_task(
+        "app.download_file",
+        args=[__build_download_event(data=request.json)],
+        queue="defaul_queue",
+    )
+    return {"msg": "Done", "task_id": result}, 201
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=9001)

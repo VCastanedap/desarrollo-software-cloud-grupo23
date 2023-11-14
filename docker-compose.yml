@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/api
+
+  files:
+    build:
+      context: ./files
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-credentials
+      - BUCKET_NAME=miso-cloud-development
+    secrets:
+      - gcp-credentials
+    volumes: ['./files:/files']
+
+  users:
+    build:
+      context: ./users
+      dockerfile: Dockerfile
+    volumes:
+      - .:/users
+
+  tasks:
+    build:
+      context: ./tasks
+      dockerfile: Dockerfile
+    volumes:
+      - .:/tasks
+
+volumes:
+  pgdata: {}
+
+secrets:
+  gcp-credentials:
+    file: /home/victor/projects/proyecto-cloud-computing-miso-1d889a810e05.json

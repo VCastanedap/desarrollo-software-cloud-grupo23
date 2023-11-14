@@ -101,7 +101,3 @@ def download_file(event):
             b.download_to_filename(b.name)
 
     return {"message": "Done", "status_code": 200}
-
-
-# LBO8h>edScYt/Jcd
-# bdkJ1O_BtN0=oX40

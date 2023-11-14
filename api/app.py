@@ -85,23 +85,15 @@ def create_task():
         return jsonify({"error": "Authorization header is missing or invalid"}), 401
 
 
-@app.route("/api/download/<filename>", methods=["GET"])
-def download_file(filename):
-    download_service_url = f"http://localhost:9001/api/download/{filename}"  # Reemplaza con la URL del servicio de descarga
-    response = requests.get(download_service_url, headers=request.headers)
-
-    if response.status_code == 200:
-        file_content = response.content
-        return send_file(
-            io.BytesIO(file_content), as_attachment=True, download_name=filename
+@app.route("/api/download/<filename>", methods=["POST"])
+def download_file():
+    if __validate_token(token=request.headers.get("Authorization")):
+        response = requests.post(
+            f"http://tasks:9001/api/tasks/create/download", json=request.json
         )
-
-    return (
-        jsonify(
-            {"error": "Error al descargar el archivo desde el servicio de descarga"}
-        ),
-        500,
-    )
+        return response.content, response.status_code
+    else:
+        return jsonify({"error": "Authorization header is missing or invalid"}), 401
 
 
 if __name__ == "__main__":

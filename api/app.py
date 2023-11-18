@@ -85,7 +85,7 @@ def create_task():
         return jsonify({"error": "Authorization header is missing or invalid"}), 401
 
 
-@app.route("/api/download/<filename>", methods=["POST"])
+@app.route("/api/tasks/download", methods=["POST"])
 def download_file():
     if __validate_token(token=request.headers.get("Authorization")):
         response = requests.post(

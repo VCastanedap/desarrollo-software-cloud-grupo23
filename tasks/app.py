@@ -147,11 +147,13 @@ def create_task():
             cr.execute(__build_convert_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
 
-        __publish_message(
+        response = __publish_message(
             data_str=json.dumps(request.json), 
             topic_id=os.getenv("CONVERT_TOPIC_ID")
         )
 
+        print(response)
+        
         """
         celery.send_task(
             "app.convert_file",
@@ -203,9 +205,9 @@ def download_task():
         result = __extract_create_task_result(data=cr.fetchone())
 
     __publish_message(
-            data_str=json.dumps(request.json), 
-            topic_id=os.getenv("DOWNLOAD_TOPIC_ID")
-        )
+        data_str=json.dumps(request.json), 
+        topic_id=os.getenv("DOWNLOAD_TOPIC_ID")
+    )
 
     """
     celery.send_task(

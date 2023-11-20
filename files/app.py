@@ -88,8 +88,6 @@ def transform_video(message: pubsub_v1.subscriber.message.Message) -> None:
 if __name__ == "__main__":    
     subscriber = pubsub_v1.SubscriberClient()
 
-    print(os.getenv("CONVERT_SUBSCRITPTION_ID"))
-
     subscription_path = subscriber.subscription_path(
         project_id,
         os.getenv("CONVERT_SUBSCRIPTION_ID")

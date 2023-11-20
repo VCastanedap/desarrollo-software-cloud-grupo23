@@ -7,19 +7,21 @@ from flask import jsonify
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
 
-# from celery import Celery
+from celery import Celery
 from google.cloud import storage
 
 from concurrent.futures import TimeoutError
 from google.cloud import pubsub_v1
 
-# CELERY_BROKER_URL = "redis://redis:6379/0"
-# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+
+os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 
-# celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
-# celery.conf.task_default_queue = "defaul_queue"
+celery.conf.task_default_queue = "defaul_queue"
 
 project_id = os.getenv("PROJECT_ID")
 timeout = 5.0
@@ -42,8 +44,15 @@ def upload_file_receiver():
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
     def callback(message: pubsub_v1.subscriber.message.Message) -> None:
-        data = json.loads(message)
         
+        print(' ')
+        print(' ')
+        print('Hello')
+        print(message)
+        data = json.loads(message)
+        print(' ')
+        print(' ')
+        print(data)
         storage_client = __get_storage_client()
         bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
         blob = bucket.blob(f"uploaded_{data.get('file_name')}")

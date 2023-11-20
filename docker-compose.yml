@@ -19,15 +19,13 @@ services:
     build:
       context: ./files
       dockerfile: Dockerfile
-    depends_on:
-      - redis
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-credentials
       - BUCKET_NAME=miso-cloud-development
-      - PROJECT_ID=kakak
-      - UPLOAD_SUBSCRIPTION_ID=kdkdkd
-      - CONVERT_SUBSCRIPTION_ID=jdjdj
-      - DOWNLOAD_SUBSCRIPTION_ID=jdjjd
+      - PROJECT_ID=proyecto-cloud-computing-miso
+      - UPLOAD_SUBSCRIPTION_ID=upload-subscription
+      - CONVERT_SUBSCRIPTION_ID=convert-subscription
+      - DOWNLOAD_SUBSCRIPTION_ID=download-subscription
     secrets:
       - gcp-credentials
     volumes: ['./files:/files']
@@ -44,15 +42,15 @@ services:
       context: ./tasks
       dockerfile: Dockerfile
     environment:
-      - PROJECT_ID=kakak
-      - UPLOAD_TOPIC_ID=kdkdkd
-      - CONVERT_TOPIC_ID=jdjdj
-      - DOWNLOAD_TOPIC_ID=jdjjd
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-credentials
+      - PROJECT_ID=proyecto-cloud-computing-miso
+      - UPLOAD_TOPIC_ID=upload-topic
+      - CONVERT_TOPIC_ID=convert-topic
+      - DOWNLOAD_TOPIC_ID=download-topic
+    secrets:
+      - gcp-credentials
     volumes:
       - .:/tasks
-
-volumes:
-  pgdata: {}
 
 secrets:
   gcp-credentials:

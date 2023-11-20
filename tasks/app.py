@@ -19,10 +19,10 @@ app = Flask(__name__)
 # celery.conf.task_default_queue = "defaul_queue"
 
 project_id = os.getenv("PROJECT_ID")
-
+os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 connection = psycopg2.connect(
-    host="34.41.231.100",
+    host="0.0.0.0",
     port="5432",
     user="postgres",
     password="bdkJ1O_BtN0=oX40",

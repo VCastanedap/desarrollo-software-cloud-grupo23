@@ -18,7 +18,7 @@ app.config["JWT_SECRET_KEY"] = "frase-secreta"
 app.secret_key = "super secret key"
 app.config["SESSION_TYPE"] = "filesystem"
 
-DB_HOST = "34.41.231.100"
+DB_HOST = "0.0.0.0"
 DB_PORT = "5432"
 DB_USERNAME = "postgres"
 DB_PASSWORD = "bdkJ1O_BtN0=oX40"

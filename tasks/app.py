@@ -1,8 +1,13 @@
+import os
+import json
+
+import psycopg2
 from flask import Flask, request
 from flask_jwt_extended import JWTManager
 from flask import jsonify
-from celery import Celery
-import psycopg2
+from google.cloud import pubsub_v1
+# from celery import Celery
+
 
 app = Flask(__name__)
 
@@ -12,6 +17,8 @@ app = Flask(__name__)
 # celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
 # celery.conf.task_default_queue = "defaul_queue"
+
+project_id = os.getenv("PROJECT_ID")
 
 
 connection = psycopg2.connect(
@@ -105,12 +112,25 @@ def __extract_create_task_result(data):
     return {"task_id": data[0]}
 
 
+def __publish_message(topic_id, data_str):    
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    data = data_str.encode("utf-8")
+    future = publisher.publish(topic_path, data)
+    return future.result()
+
+
 @app.route("/api/tasks/create", methods=["POST"])
 def create_task():
     if request.json.get("task_type") == "upload_file":
         with connection.cursor() as cr:
             cr.execute(__build_upload_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
+
+        __publish_message(
+            data_str=json.dumps(request.json), 
+            topic_id=os.getenv("UPLOAD_TOPIC_ID")
+        )
 
         """
         celery.send_task(
@@ -126,6 +146,11 @@ def create_task():
         with connection.cursor() as cr:
             cr.execute(__build_convert_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
+
+        __publish_message(
+            data_str=json.dumps(request.json), 
+            topic_id=os.getenv("CONVERT_TOPIC_ID")
+        )
 
         """
         celery.send_task(
@@ -176,6 +201,11 @@ def download_task():
     with connection.cursor() as cr:
         cr.execute(__build_download_query(data=request.json))
         result = __extract_create_task_result(data=cr.fetchone())
+
+    __publish_message(
+            data_str=json.dumps(request.json), 
+            topic_id=os.getenv("DOWNLOAD_TOPIC_ID")
+        )
 
     """
     celery.send_task(

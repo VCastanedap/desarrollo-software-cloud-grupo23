@@ -6,17 +6,17 @@ from flask import jsonify
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
 
-from celery import Celery
+# from celery import Celery
 from google.cloud import storage
 
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+# CELERY_BROKER_URL = "redis://redis:6379/0"
+# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
 
-celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+# celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
-celery.conf.task_default_queue = "defaul_queue"
+# celery.conf.task_default_queue = "defaul_queue"
 
 
 UPLOAD_FOLDER = "uploads"
@@ -29,8 +29,9 @@ def __get_storage_client():
     )
 
 
-@celery.task
-def upload_file(data):
+# @celery.task
+
+def upload_file_receiver(data):
     storage_client = __get_storage_client()
 
     bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
@@ -64,8 +65,9 @@ def __uploaded_converted_file(result_file_name):
         uploaded_blob.upload_from_file(f)
 
 
-@celery.task
-def convert_file(data):
+# @celery.task
+
+def convert_file_receiver(data):
     file_name = data.get("file_name")
     conversion_format = data.get("conversion_format")
     result_file_name = f"converted_{file_name.split('.')[0]}.{conversion_format}"
@@ -89,8 +91,8 @@ def convert_file(data):
     return {"message": "Done", "status_code": 200}
 
 
-@celery.task
-def download_file(event):
+# @celery.task
+def download_file_receiver(event):
     file_name = event.get("file_name")
     storage_client = __get_storage_client()
 

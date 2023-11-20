@@ -1,4 +1,5 @@
 import os
+import json
 
 from flask import url_for, flash
 from flask import jsonify
@@ -9,6 +10,8 @@ from moviepy.editor import VideoFileClip
 # from celery import Celery
 from google.cloud import storage
 
+from concurrent.futures import TimeoutError
+from google.cloud import pubsub_v1
 
 # CELERY_BROKER_URL = "redis://redis:6379/0"
 # CELERY_RESULT_BACKEND = "redis://redis:6379/0"
@@ -18,6 +21,8 @@ from google.cloud import storage
 
 # celery.conf.task_default_queue = "defaul_queue"
 
+project_id = os.getenv("PROJECT_ID")
+timeout = 5.0
 
 UPLOAD_FOLDER = "uploads"
 ALLOWED_FORMATS = ["mp4", "webm", "avi", "mpeg", "wmv"]
@@ -30,18 +35,32 @@ def __get_storage_client():
 
 
 # @celery.task
+def upload_file_receiver():
+    subscription_id = os.getenv("UPLOAD_SUBSCRIPTION_ID")
+    
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
 
-def upload_file_receiver(data):
-    storage_client = __get_storage_client()
+    def callback(message: pubsub_v1.subscriber.message.Message) -> None:
+        data = json.loads(message)
+        
+        storage_client = __get_storage_client()
+        bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
+        blob = bucket.blob(f"uploaded_{data.get('file_name')}")
 
-    bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
+        with open(data.get("input_path"), "rb") as f:
+            blob.upload_from_file(f)
 
-    blob = bucket.blob(f"uploaded_{data.get('file_name')}")
+        message.ack()
 
-    with open(data.get("input_path"), "rb") as f:
-        blob.upload_from_file(f)
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
 
-    return {"message": "Done", "status_code": 200}
+    with subscriber:
+        try:
+            streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+            streaming_pull_future.cancel()
+            streaming_pull_future.result()
 
 
 def __convert_video(output_path, output_format, video):
@@ -66,7 +85,6 @@ def __uploaded_converted_file(result_file_name):
 
 
 # @celery.task
-
 def convert_file_receiver(data):
     file_name = data.get("file_name")
     conversion_format = data.get("conversion_format")

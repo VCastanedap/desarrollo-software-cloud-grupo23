@@ -5,6 +5,7 @@ colorama
 Flask
 Flask-SQLAlchemy
 Flask-JWT-Extended
+google-cloud-pubsub
 importlib-metadata
 itsdangerous
 Jinja2

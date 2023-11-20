@@ -6,12 +6,12 @@ import psycopg2
 
 app = Flask(__name__)
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+# CELERY_BROKER_URL = "redis://redis:6379/0"
+# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
-celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+# celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
-celery.conf.task_default_queue = "defaul_queue"
+# celery.conf.task_default_queue = "defaul_queue"
 
 
 connection = psycopg2.connect(
@@ -112,11 +112,14 @@ def create_task():
             cr.execute(__build_upload_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
 
+        """
         celery.send_task(
             "app.upload_file",
             args=[__build_upload_event(data=request.json)],
             queue="defaul_queue",
         )
+        """
+
         return {"msg": "Done", "task_id": result}, 201
 
     elif request.json.get("task_type") == "convert_file":
@@ -124,11 +127,14 @@ def create_task():
             cr.execute(__build_convert_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
 
+        """
         celery.send_task(
             "app.convert_file",
             args=[__build_convert_event(data=request.json)],
             queue="defaul_queue",
         )
+        """
+
         return {"msg": "Done", "task_id": result}, 201
 
 
@@ -171,11 +177,13 @@ def download_task():
         cr.execute(__build_download_query(data=request.json))
         result = __extract_create_task_result(data=cr.fetchone())
 
+    """
     celery.send_task(
         "app.download_file",
         args=[__build_download_event(data=request.json)],
         queue="defaul_queue",
     )
+    """
     return {"msg": "Done", "task_id": result}, 201
 
 

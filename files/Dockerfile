@@ -24,4 +24,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Run the Celery worker when the container launches
 # CMD ["celery", "-A", "tasks", "worker", "--loglevel=info"]
-CMD ["celery", "-A", "app", "worker", "--loglevel=info"]
+# CMD ["celery", "-A", "app", "worker", "--loglevel=info"]
+CMD ["python", "app.py"]

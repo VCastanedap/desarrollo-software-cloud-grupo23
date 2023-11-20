@@ -1,21 +1,28 @@
+import os
+import json
+
+import psycopg2
 from flask import Flask, request
 from flask_jwt_extended import JWTManager
 from flask import jsonify
-from celery import Celery
-import psycopg2
+from google.cloud import pubsub_v1
+# from celery import Celery
+
 
 app = Flask(__name__)
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+# CELERY_BROKER_URL = "redis://redis:6379/0"
+# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
-celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+# celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
-celery.conf.task_default_queue = "defaul_queue"
+# celery.conf.task_default_queue = "defaul_queue"
 
+project_id = os.getenv("PROJECT_ID")
+os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 connection = psycopg2.connect(
-    host="34.41.231.100",
+    host="0.0.0.0",
     port="5432",
     user="postgres",
     password="bdkJ1O_BtN0=oX40",
@@ -105,6 +112,14 @@ def __extract_create_task_result(data):
     return {"task_id": data[0]}
 
 
+def __publish_message(topic_id, data_str):    
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    data = data_str.encode("utf-8")
+    future = publisher.publish(topic_path, data)
+    return future.result()
+
+
 @app.route("/api/tasks/create", methods=["POST"])
 def create_task():
     if request.json.get("task_type") == "upload_file":
@@ -112,11 +127,19 @@ def create_task():
             cr.execute(__build_upload_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
 
+        __publish_message(
+            data_str=json.dumps(request.json), 
+            topic_id=os.getenv("UPLOAD_TOPIC_ID")
+        )
+
+        """
         celery.send_task(
             "app.upload_file",
             args=[__build_upload_event(data=request.json)],
             queue="defaul_queue",
         )
+        """
+
         return {"msg": "Done", "task_id": result}, 201
 
     elif request.json.get("task_type") == "convert_file":
@@ -124,11 +147,21 @@ def create_task():
             cr.execute(__build_convert_query(data=request.json))
             result = __extract_create_task_result(data=cr.fetchone())
 
+        response = __publish_message(
+            data_str=json.dumps(request.json), 
+            topic_id=os.getenv("CONVERT_TOPIC_ID")
+        )
+
+        print(response)
+        
+        """
         celery.send_task(
             "app.convert_file",
             args=[__build_convert_event(data=request.json)],
             queue="defaul_queue",
         )
+        """
+
         return {"msg": "Done", "task_id": result}, 201
 
 
@@ -171,11 +204,18 @@ def download_task():
         cr.execute(__build_download_query(data=request.json))
         result = __extract_create_task_result(data=cr.fetchone())
 
+    __publish_message(
+        data_str=json.dumps(request.json), 
+        topic_id=os.getenv("DOWNLOAD_TOPIC_ID")
+    )
+
+    """
     celery.send_task(
         "app.download_file",
         args=[__build_download_event(data=request.json)],
         queue="defaul_queue",
     )
+    """
     return {"msg": "Done", "task_id": result}, 201
 
 

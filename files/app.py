@@ -1,4 +1,5 @@
 import os
+import json
 
 from flask import url_for, flash
 from flask import jsonify
@@ -6,18 +7,25 @@ from flask import jsonify
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
 
-from celery import Celery
+# from celery import Celery
 from google.cloud import storage
 
+from concurrent.futures import TimeoutError
+from google.cloud import pubsub_v1
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+
+# CELERY_BROKER_URL = "redis://redis:6379/0"
+# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+
+os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 
-celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+# celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
-celery.conf.task_default_queue = "defaul_queue"
+# celery.conf.task_default_queue = "defaul_queue"
 
+project_id = os.getenv("PROJECT_ID")
+timeout = 600
 
 UPLOAD_FOLDER = "uploads"
 ALLOWED_FORMATS = ["mp4", "webm", "avi", "mpeg", "wmv"]
@@ -28,19 +36,6 @@ def __get_storage_client():
         os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     )
 
-
-@celery.task
-def upload_file(data):
-    storage_client = __get_storage_client()
-
-    bucket = storage_client.get_bucket(os.getenv("BUCKET_NAME"))
-
-    blob = bucket.blob(f"uploaded_{data.get('file_name')}")
-
-    with open(data.get("input_path"), "rb") as f:
-        blob.upload_from_file(f)
-
-    return {"message": "Done", "status_code": 200}
 
 
 def __convert_video(output_path, output_format, video):
@@ -64,8 +59,10 @@ def __uploaded_converted_file(result_file_name):
         uploaded_blob.upload_from_file(f)
 
 
-@celery.task
-def convert_file(data):
+def transform_video(message: pubsub_v1.subscriber.message.Message) -> None:
+    data = message.data.decode("utf-8")
+    data = json.loads(data)
+    
     file_name = data.get("file_name")
     conversion_format = data.get("conversion_format")
     result_file_name = f"converted_{file_name.split('.')[0]}.{conversion_format}"
@@ -86,18 +83,23 @@ def convert_file(data):
 
         __uploaded_converted_file(result_file_name=result_file_name)
 
-    return {"message": "Done", "status_code": 200}
+    message.ack()
 
+if __name__ == "__main__":    
+    subscriber = pubsub_v1.SubscriberClient()
 
-@celery.task
-def download_file(event):
-    file_name = event.get("file_name")
-    storage_client = __get_storage_client()
+    subscription_path = subscriber.subscription_path(
+        project_id,
+        os.getenv("CONVERT_SUBSCRIPTION_ID")
+    )
 
-    blobs = storage_client.list_blobs(os.getenv("BUCKET_NAME"))
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=transform_video)
+    print(f"Listening for messages on {subscription_path}..\n")
 
-    for b in blobs:
-        if b.name == file_name:
-            b.download_to_filename(b.name)
+    with subscriber:
+        try:
+            streaming_pull_future.result()
+        except TimeoutError:
+            streaming_pull_future.cancel()
+            streaming_pull_future.result()
 
-    return {"message": "Done", "status_code": 200}
